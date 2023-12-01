@@ -100,3 +100,83 @@ Day01.part_one(input_day_01) |> IO.inspect(label: "Part 1")
 Day01.part_two(input_day_01) |> IO.inspect(label: "Part 2")
 :ok
 ```
+
+#### ⚡ With Binary Pattern Matching ⚡
+
+```elixir
+defmodule Day01.BinaryPatternMatching do
+  def part_one(input), do: run(input, &line_digits_part_one/1)
+  def part_two(input), do: run(input, &line_digits_part_two/1)
+
+  defp run(input, digits_fun) do
+    input
+    |> String.splitter("\n")
+    |> Enum.map(digits_fun)
+    |> Enum.sum()
+  end
+
+  defp line_digits_part_one(line, list \\ []) do
+    case line do
+      <<digit, rest::binary>> when digit in ?1..?9 ->
+        line_digits_part_one(rest, [digit | list])
+
+      <<_not_a_digit, rest::binary>> ->
+        line_digits_part_one(rest, list)
+
+      <<>> ->
+        return(list)
+    end
+  end
+
+  defp line_digits_part_two(line, list \\ []) do
+    case line do
+      <<digit, rest::binary>> when digit in ?1..?9 ->
+        line_digits_part_two(rest, [digit | list])
+
+      <<"one", rest::binary>> ->
+        line_digits_part_two(<<"e", rest::binary>>, [?1 | list])
+
+      <<"two", rest::binary>> ->
+        line_digits_part_two(<<"o", rest::binary>>, [?2 | list])
+
+      <<"three", rest::binary>> ->
+        line_digits_part_two(<<"e", rest::binary>>, [?3 | list])
+
+      <<"four", rest::binary>> ->
+        line_digits_part_two(rest, [?4 | list])
+
+      <<"five", rest::binary>> ->
+        line_digits_part_two(<<"e", rest::binary>>, [?5 | list])
+
+      <<"six", rest::binary>> ->
+        line_digits_part_two(rest, [?6 | list])
+
+      <<"seven", rest::binary>> ->
+        line_digits_part_two(<<"n", rest::binary>>, [?7 | list])
+
+      <<"eight", rest::binary>> ->
+        line_digits_part_two(<<"t", rest::binary>>, [?8 | list])
+
+      <<"nine", rest::binary>> ->
+        line_digits_part_two(<<"e", rest::binary>>, [?9 | list])
+
+      <<_not_a_digit, rest::binary>> ->
+        line_digits_part_two(rest, list)
+
+      <<>> ->
+        return(list)
+    end
+  end
+
+  defp return(list) do
+    <<List.last(list), List.first(list)>>
+    |> String.to_integer()
+  end
+end
+```
+
+```elixir
+Day01.BinaryPatternMatching.part_one(input_day_01) |> IO.inspect(label: "Part 1")
+Day01.BinaryPatternMatching.part_two(input_day_01) |> IO.inspect(label: "Part 2")
+:ok
+```
