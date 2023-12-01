@@ -1,0 +1,102 @@
+# AoC 2023
+
+```elixir
+Mix.install([
+  {:kino_aoc, "~> 0.1.5"}
+])
+```
+
+## Hi there!
+
+This notebook contains solutions for [Advent of Code 2023](https://adventofcode.com/2023)
+
+<!-- livebook:{"branch_parent_index":0} -->
+
+## Day 01
+
+<!-- livebook:{"attrs":{"assign_to":"input_day_01","day":"1","session_secret":"AOC_SESSION_TOKEN","year":"2023"},"chunks":null,"kind":"Elixir.KinoAOC.HelperCell","livebook_object":"smart_cell"} -->
+
+```elixir
+{:ok, input_day_01} =
+  KinoAOC.download_puzzle("2023", "1", System.fetch_env!("LB_AOC_SESSION_TOKEN"))
+```
+
+#### Part 1
+
+```elixir
+pattern = ~r/\d/
+
+input_day_01
+|> String.splitter("\n")
+|> Stream.map(fn line ->
+  Regex.scan(pattern, line)
+  |> List.flatten()
+end)
+|> Stream.map(&(List.first(&1) <> List.last(&1)))
+|> Stream.map(&String.to_integer/1)
+|> Enum.sum()
+```
+
+#### Part 2
+
+```elixir
+pattern = ~r/(?=([\d]|one|two|three|four|five|six|seven|eight|nine))/
+
+words =
+  ~w[one two three four five six seven eight nine]
+  |> Enum.with_index(1)
+  |> Enum.map(fn {word, index} -> {word, to_string(index)} end)
+  |> Enum.into(%{})
+
+input_day_01
+|> String.splitter("\n")
+|> Stream.map(fn line ->
+  Regex.scan(pattern, line, capture: :all_but_first)
+  |> List.flatten()
+  |> Enum.map(&Map.get(words, &1, &1))
+end)
+|> Stream.map(&(List.first(&1) <> List.last(&1)))
+|> Stream.map(&String.to_integer/1)
+|> Enum.sum()
+```
+
+#### Module
+
+```elixir
+defmodule Day01 do
+  def part_one(input), do: process(input, &line_digits_part_one/1)
+  def part_two(input), do: process(input, &line_digits_part_two/1)
+
+  defp process(input, line_digits_fun) do
+    input
+    |> String.splitter("\n")
+    |> Stream.map(line_digits_fun)
+    |> Stream.map(&(List.first(&1) <> List.last(&1)))
+    |> Stream.map(&String.to_integer/1)
+    |> Enum.sum()
+  end
+
+  @pattern ~r/\d/
+  defp line_digits_part_one(line) do
+    Regex.scan(@pattern, line)
+    |> List.flatten()
+  end
+
+  @pattern ~r/(?=(\d|one|two|three|four|five|six|seven|eight|nine))/
+  @words ~w[one two three four five six seven eight nine]
+         |> Enum.with_index(1)
+         |> Enum.map(fn {word, digit} -> {word, to_string(digit)} end)
+         |> Enum.into(%{})
+  defp line_digits_part_two(line) do
+    Regex.scan(@pattern, line, capture: :all_but_first)
+    |> List.flatten()
+    |> Enum.map(&Map.get(@words, &1, &1))
+  end
+end
+```
+
+```elixir
+Day01.part_one(input_day_01) |> IO.inspect(label: "Part 1")
+Day01.part_two(input_day_01) |> IO.inspect(label: "Part 2")
+:ok
+```
