@@ -8,7 +8,11 @@ Mix.install([
 
 ## Hi there!
 
-This notebook contains solutions for [Advent of Code 2023](https://adventofcode.com/2023)
+This [Livebook](https://livebook.dev/) notebook contains solutions for [Advent of Code 2023](https://adventofcode.com/2023)
+
+<!-- livebook:{"break_markdown":true} -->
+
+[![Run in Livebook](https://livebook.dev/badge/v1/black.svg)](https://livebook.dev/run?url=https%3A%2F%2Fraw.githubusercontent.com%2Fawerment%2Faoc_2023%2Fmain%2Felixir%2Fnotebook.livemd)
 
 <!-- livebook:{"branch_parent_index":0} -->
 
