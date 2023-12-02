@@ -2,7 +2,8 @@
 
 ```elixir
 Mix.install([
-  {:kino_aoc, "~> 0.1.5"}
+  {:kino_aoc, "~> 0.1.5"},
+  {:nimble_parsec, "~> 1.4"}
 ])
 ```
 
@@ -182,5 +183,150 @@ end
 ```elixir
 Day01.BinaryPatternMatching.part_one(input_day_01) |> IO.inspect(label: "Part 1")
 Day01.BinaryPatternMatching.part_two(input_day_01) |> IO.inspect(label: "Part 2")
+:ok
+```
+
+<!-- livebook:{"branch_parent_index":0} -->
+
+## Day 02
+
+<!-- livebook:{"attrs":{"assign_to":"input_day_02","day":"2","session_secret":"AOC_SESSION_TOKEN","year":"2023"},"chunks":null,"kind":"Elixir.KinoAOC.HelperCell","livebook_object":"smart_cell"} -->
+
+```elixir
+{:ok, input_day_02} =
+  KinoAOC.download_puzzle("2023", "2", System.fetch_env!("LB_AOC_SESSION_TOKEN"))
+```
+
+#### Some setup...
+
+```elixir
+defmodule Day02.Game do
+  defstruct id: nil,
+            red: 0,
+            green: 0,
+            blue: 0
+end
+```
+
+```elixir
+defmodule Day02.Parser do
+  import NimbleParsec
+  alias Day02.Game
+
+  game_number =
+    ignore(string("Game "))
+    |> integer(min: 1)
+
+  color =
+    choice([
+      string("red"),
+      string("green"),
+      string("blue")
+    ])
+    |> map({String, :to_atom, []})
+
+  hand =
+    integer(min: 1)
+    |> ignore(string(" "))
+    |> concat(color)
+    |> optional(ignore(string(", ")))
+    |> times(min: 1, max: 3)
+    |> wrap()
+
+  hands =
+    hand
+    |> map({:color_list, []})
+    |> optional(ignore(string("; ")))
+    |> repeat()
+
+  game =
+    game_number
+    |> ignore(string(": "))
+    |> concat(wrap(hands))
+    |> wrap()
+    |> map({:to_game, []})
+
+  games =
+    game
+    |> optional(ignore(string("\n")))
+    |> repeat()
+
+  defparsec(:games, games)
+
+  defp color_list(list) do
+    Enum.chunk_every(list, 2)
+    |> Enum.map(fn [num, color] -> {color, num} end)
+  end
+
+  defp to_game([id, draws]) do
+    Enum.reduce(draws, %Game{id: id}, fn
+      draw, game ->
+        Enum.reduce(draw, game, fn {color, num}, game ->
+          Map.update(game, color, num, fn pre -> max(pre, num) end)
+        end)
+    end)
+  end
+end
+```
+
+```elixir
+{:ok, games, _, _, _, _} = Day02.Parser.games(input_day_02)
+```
+
+#### Part 1
+
+```elixir
+limits = %{red: 12, green: 13, blue: 14}
+
+games
+|> Enum.filter(fn game ->
+  Enum.all?(limits, fn {color, num} -> Map.fetch!(game, color) <= num end)
+end)
+|> Enum.map(&Map.fetch!(&1, :id))
+|> Enum.sum()
+```
+
+#### Part 2
+
+```elixir
+games
+|> Enum.map(fn game ->
+  Map.take(game, [:red, :green, :blue])
+  |> Map.values()
+  |> Enum.product()
+end)
+|> Enum.sum()
+```
+
+#### Module
+
+```elixir
+defmodule Day02 do
+  alias Day02.{Game, Parser}
+
+  @limits %{red: 12, green: 13, blue: 14}
+  def part_one(input) do
+    load(input)
+    |> Enum.filter(&Enum.all?(@limits, fn {color, num} -> Map.fetch!(&1, color) <= num end))
+    |> Enum.map(fn %Game{id: id} -> id end)
+    |> Enum.sum()
+  end
+
+  def part_two(input) do
+    load(input)
+    |> Enum.map(fn %Game{red: red, green: green, blue: blue} -> red * green * blue end)
+    |> Enum.sum()
+  end
+
+  defp load(input) do
+    {:ok, games, _, _, _, _} = Parser.games(input)
+    games
+  end
+end
+```
+
+```elixir
+Day02.part_one(input_day_02) |> IO.inspect(label: "Part 1")
+Day02.part_two(input_day_02) |> IO.inspect(label: "Part 2")
 :ok
 ```
