@@ -307,7 +307,9 @@ defmodule Day02 do
   @limits %{red: 12, green: 13, blue: 14}
   def part_one(input) do
     load(input)
-    |> Enum.filter(&Enum.all?(@limits, fn {color, num} -> Map.fetch!(&1, color) <= num end))
+    |> Enum.reject(fn %Game{red: red, green: green, blue: blue} ->
+      red > @limits.red || green > @limits.green || blue > @limits.blue
+    end)
     |> Enum.map(fn %Game{id: id} -> id end)
     |> Enum.sum()
   end
