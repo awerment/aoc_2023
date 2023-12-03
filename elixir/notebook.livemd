@@ -324,3 +324,162 @@ Day02.part_one(input_day_02) |> IO.inspect(label: "Part 1")
 Day02.part_two(input_day_02) |> IO.inspect(label: "Part 2")
 :ok
 ```
+
+<!-- livebook:{"branch_parent_index":0} -->
+
+## Day 03
+
+<!-- livebook:{"attrs":{"assign_to":"input_day_03","day":"3","session_secret":"AOC_SESSION_TOKEN","year":"2023"},"chunks":null,"kind":"Elixir.KinoAOC.HelperCell","livebook_object":"smart_cell"} -->
+
+```elixir
+{:ok, input_day_03} =
+  KinoAOC.download_puzzle("2023", "3", System.fetch_env!("LB_AOC_SESSION_TOKEN"))
+```
+
+#### Find out which symbols we need to look for
+
+```elixir
+# Symbols we need to consider
+input_day_03
+|> String.codepoints()
+|> Enum.uniq()
+|> Enum.filter(fn
+  c when c in ~w[. 1 2 3 4 5 6 7 8 9 0] -> false
+  _ -> true
+end)
+```
+
+```elixir
+symbols_pattern = ~r/[\*\&\@\/\+\-\%\$\=\#]/
+
+parsed =
+  input_day_03
+  |> String.split("\n", trim: true)
+  |> Enum.with_index()
+  |> Enum.reduce(%{numbers: [], symbols: %{}}, fn {line, y}, state ->
+    numbers =
+      Regex.scan(~r/\d+/, line, return: :index)
+      |> List.flatten()
+      |> Enum.map(fn {start, length} ->
+        bounds =
+          for y <- (y - 1)..(y + 1), x <- (start - 1)..(start + length) do
+            {y, x}
+          end
+
+        number = String.slice(line, start, length) |> String.to_integer()
+        {number, bounds}
+      end)
+
+    symbols =
+      Regex.scan(symbols_pattern, line, return: :index)
+      |> List.flatten()
+      |> Enum.map(fn {start, 1} ->
+        {{y, start}, String.at(line, start)}
+      end)
+      |> Enum.into(%{})
+
+    %{state | numbers: numbers ++ state.numbers, symbols: Map.merge(state.symbols, symbols)}
+  end)
+
+:ok
+```
+
+#### Part 1
+
+```elixir
+parsed.numbers
+|> Stream.filter(fn {_number, bounds} ->
+  Enum.any?(bounds, &Map.has_key?(parsed.symbols, &1))
+end)
+|> Stream.map(fn {number, _bounds} -> number end)
+|> Enum.sum()
+```
+
+#### Part 2
+
+```elixir
+parsed.symbols
+|> Stream.filter(fn {_yx, symbol} -> symbol == "*" end)
+|> Stream.flat_map(fn {yx, _sumbol} ->
+  Enum.filter(parsed.numbers, fn {_number, bounds} ->
+    Enum.any?(bounds, fn b -> b == yx end)
+  end)
+  |> case do
+    [{a, _yxa}, {b, _yxb}] -> [a * b]
+    _ -> []
+  end
+end)
+|> Enum.sum()
+```
+
+#### Module
+
+```elixir
+defmodule Day03 do
+  def part_one(input) do
+    %{numbers: numbers, symbols: symbols} = prepare(input)
+
+    numbers
+    |> Stream.filter(fn {_number, bounds} ->
+      Enum.any?(bounds, &Map.has_key?(symbols, &1))
+    end)
+    |> Stream.map(fn {number, _bounds} -> number end)
+    |> Enum.sum()
+  end
+
+  def part_two(input) do
+    %{numbers: numbers, symbols: symbols} = prepare(input)
+
+    symbols
+    |> Stream.filter(fn {_yx, symbol} -> symbol == "*" end)
+    |> Stream.flat_map(fn {yx, _sumbol} ->
+      Enum.filter(numbers, fn {_number, bounds} ->
+        Enum.any?(bounds, fn b -> b == yx end)
+      end)
+      |> case do
+        [{a, _yxa}, {b, _yxb}] -> [a * b]
+        _ -> []
+      end
+    end)
+    |> Enum.sum()
+  end
+
+  @symbols_pattern ~r/[\*\&\@\/\+\-\%\$\=\#]/
+  defp prepare(input) do
+    input
+    |> String.split("\n", trim: true)
+    |> Enum.with_index()
+    |> Enum.reduce(%{numbers: [], symbols: %{}}, fn {line, y}, acc ->
+      numbers =
+        Regex.scan(~r/\d+/, line, return: :index)
+        |> List.flatten()
+        |> Enum.map(fn {start, length} ->
+          number = String.slice(line, start, length) |> String.to_integer()
+
+          bounds =
+            for y <- (y - 1)..(y + 1), x <- (start - 1)..(start + length) do
+              {y, x}
+            end
+
+          {number, bounds}
+        end)
+
+      symbols =
+        Regex.scan(@symbols_pattern, line, return: :index)
+        |> List.flatten()
+        |> Enum.map(fn {start, 1} ->
+          {{y, start}, String.at(line, start)}
+        end)
+        |> Enum.into(%{})
+
+      %{acc | numbers: numbers ++ acc.numbers, symbols: Map.merge(acc.symbols, symbols)}
+    end)
+  end
+end
+```
+
+```elixir
+Day03.part_one(input_day_03) |> IO.inspect(label: "Part 1")
+Day03.part_two(input_day_03) |> IO.inspect(label: "Part 2")
+:ok
+```
