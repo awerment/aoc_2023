@@ -484,3 +484,87 @@ Day03.part_one(input_day_03) |> IO.inspect(label: "Part 1")
 Day03.part_two(input_day_03) |> IO.inspect(label: "Part 2")
 :ok
 ```
+
+<!-- livebook:{"branch_parent_index":0} -->
+
+## Day 04
+
+<!-- livebook:{"attrs":{"assign_to":"input_day_04","day":"4","session_secret":"AOC_SESSION_TOKEN","year":"2023"},"chunks":null,"kind":"Elixir.KinoAOC.HelperCell","livebook_object":"smart_cell"} -->
+
+```elixir
+{:ok, input_day_04} =
+  KinoAOC.download_puzzle("2023", "4", System.fetch_env!("LB_AOC_SESSION_TOKEN"))
+```
+
+```elixir
+defmodule Day04 do
+  defmodule Card do
+    defstruct id: nil,
+              points: 0
+  end
+
+  def part_one(input) do
+    parse(input)
+    |> Stream.map(fn %Card{points: points} ->
+      case points do
+        0 -> 0
+        p -> 2 ** (p - 1)
+      end
+    end)
+    |> Enum.sum()
+  end
+
+  def part_two(input) do
+    cards = parse(input)
+
+    cards_by_id =
+      Map.new(cards, fn %Card{id: id} = card -> {id, card} end)
+
+    accumulate_points(cards, Enum.count(cards), cards_by_id)
+  end
+
+  defp accumulate_points([], points, _cards_by_id), do: points
+
+  defp accumulate_points(cards, points, cards_by_id) do
+    cards =
+      Enum.flat_map(cards, fn
+        %Card{id: _id, points: 0} ->
+          []
+
+        %Card{id: id, points: p} ->
+          Map.take(cards_by_id, Range.to_list((id + 1)..(id + p))) |> Map.values()
+      end)
+
+    accumulate_points(cards, points + Enum.count(cards), cards_by_id)
+  end
+
+  defp parse(input) do
+    input
+    |> String.splitter("\n")
+    |> Stream.map(fn line ->
+      [card, numbers] = String.split(line, ":", parts: 2)
+
+      [_card, card_id] = String.split(card, " ", trim: true)
+
+      [winning, have] =
+        String.split(numbers, "|", parts: 2)
+        |> Enum.map(fn numbers ->
+          String.split(numbers, " ", trim: true) |> Enum.map(&String.to_integer/1)
+        end)
+
+      points =
+        MapSet.new(winning)
+        |> MapSet.intersection(MapSet.new(have))
+        |> MapSet.size()
+
+      %Card{id: String.to_integer(card_id), points: points}
+    end)
+  end
+end
+```
+
+```elixir
+Day04.part_one(input_day_04) |> IO.inspect(label: "Part 1")
+Day04.part_two(input_day_04) |> IO.inspect(label: "Part 2")
+:ok
+```
